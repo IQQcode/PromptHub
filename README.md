@@ -1,4 +1,4 @@
-# 👋 欢迎来到 Prompts-Go！
+# 👋 欢迎来到 PromptHub！
 
 ## 🎉 项目完成
 
