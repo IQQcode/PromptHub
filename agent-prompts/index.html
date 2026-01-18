@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Prompts - AI 提示词库</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        html {
+            color-scheme: light;
+        }
+
+        html.dark {
+            color-scheme: dark;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            @apply transition-colors duration-300;
+        }
+        
+        code, pre {
+            font-family: 'JetBrains Mono', 'Monaco', monospace;
+        }
+        
+        /* Glassmorphism 效果 */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-dark {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 渐变背景 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* 动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .animate-slide-in-left {
+            animation: slideInLeft 0.6s ease-out forwards;
+        }
+        
+        /* 平滑过渡 */
+        .transition-smooth {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* 卡片悬停效果 */
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .card-hover:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 按钮阴影 */
+        .btn-shadow {
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-shadow:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 transition-colors">
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 group cursor-pointer" onclick="window.location.hash = 'home'">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <i class="fas fa-sparkles text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Agent Prompts
+                    </span>
+                </div>
+
+                <!-- 导航菜单 (桌面) -->
+                <div class="hidden md:flex items-center gap-8">
+                    <button onclick="AppRouter.navigate('browse')" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-smooth font-medium">浏览</button>
+                    <a href="#features" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-smooth font-medium">功能</a>
+                    <a href="#about" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-smooth font-medium">关于</a>
+                </div>
+
+                <!-- 按钮 -->
+                <div class="flex items-center gap-3">
+                    <!-- 主题切换 -->
+                    <button onclick="ThemeManager.toggle()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                        <i class="fas fa-sun hidden dark:inline text-yellow-500"></i>
+                        <i class="fas fa-moon dark:hidden text-slate-600"></i>
+                    </button>
+
+                    <button class="hidden sm:inline-flex px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-smooth">
+                        登录
+                    </button>
+                    <button data-action="upload" class="px-5 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium btn-shadow hover:shadow-lg transition-smooth">
+                        上传提示词
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero 部分 -->
+    <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center space-y-6 animate-fade-in-up">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
+                    发现和分享
+                    <span class="gradient-text"> AI 提示词</span>
+                </h1>
+                <p class="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+                    精选数千个高质量 AI 提示词。快速搜索、一键复制、实时编辑。打造你的提示词库。
+                </p>
+
+                <!-- 搜索框 -->
+                <div class="flex gap-3 justify-center mt-8">
+                    <div class="relative w-full max-w-2xl">
+                        <input 
+                            type="text" 
+                            placeholder="搜索提示词... 例如: ChatGPT 文案生成"
+                            class="w-full px-5 py-4 pr-12 rounded-xl glass dark:glass-dark text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors"
+                        >
+                        <button class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-smooth">
+                            <i class="fas fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CTA 按钮 -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                    <button data-action="start" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium btn-shadow hover:shadow-lg transition-smooth flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-arrow-right"></i>
+                        开始探索
+                    </button>
+                    <button class="px-8 py-3 glass dark:glass-dark text-slate-900 dark:text-white rounded-lg font-medium hover:bg-white/90 dark:hover:bg-slate-800/90 transition-smooth flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-github"></i>
+                        GitHub
+                    </button>
+                </div>
+
+                <!-- 数据统计 -->
+                <div class="flex flex-col sm:flex-row gap-8 justify-center mt-12 pt-8 border-t border-slate-200">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600">10,000+</div>
+                        <div class="text-sm text-slate-600">高质量提示词</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">50,000+</div>
+                        <div class="text-sm text-slate-600">社区用户</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-indigo-600">100,000+</div>
+                        <div class="text-sm text-slate-600">月度搜索</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特色部分 -->
+    <section id="features" class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/5 dark:bg-slate-800/50 transition-colors">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">核心功能</h2>
+                <p class="text-slate-600 dark:text-slate-300 mt-4">一站式 AI 提示词管理平台</p>
+            </div>
+
+            <!-- 功能卡片网格 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 卡片 1 -->
+                <div data-feature-id="1" class="glass dark:glass-dark rounded-xl p-8 card-hover transition-smooth cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4">
+                        <i class="fas fa-search text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">智能搜索</h3>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        支持中英文、模糊匹配、拼音搜索。秒级返回相关结果，找到你需要的提示词。
+                    </p>
+                </div>
+
+                <!-- 卡片 2 -->
+                <div data-feature-id="2" class="glass dark:glass-dark rounded-xl p-8 card-hover transition-smooth cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4">
+                        <i class="fas fa-upload text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">自由上传</h3>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        分享你的提示词创意。支持批量导入、模板选择、实时预览。让优质内容被看见。
+                    </p>
+                </div>
+
+                <!-- 卡片 3 -->
+                <div data-feature-id="3" class="glass dark:glass-dark rounded-xl p-8 card-hover transition-smooth cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center mb-4">
+                        <i class="fas fa-heart text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">收藏管理</h3>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        创建个人收藏夹。同步到云端，随时随地访问你的提示词库。支持多设备同步。
+                    </p>
+                </div>
+
+                <!-- 卡片 4 -->
+                <div data-feature-id="4" class="glass dark:glass-dark rounded-xl p-8 card-hover transition-smooth cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4">
+                        <i class="fas fa-copy text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">一键复制</h3>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        极速复制提示词内容。直接粘贴到 ChatGPT、Claude 等 AI 工具。提高效率 10 倍。
+                    </p>
+                </div>
+
+                <!-- 卡片 5 -->
+                <div data-feature-id="5" class="glass dark:glass-dark rounded-xl p-8 card-hover transition-smooth cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4">
+                        <i class="fas fa-star text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">评分评论</h3>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        社区驱动的质量评估。用户评分和评论帮助发现最佳提示词。高质量内容浮出水面。
+                    </p>
+                </div>
+
+                <!-- 卡片 6 -->
+                <div data-feature-id="6" class="glass dark:glass-dark rounded-xl p-8 card-hover transition-smooth cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-4">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">数据分析</h3>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        查看提示词使用统计。热度排行、版本历史、个人贡献统计。了解内容表现。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 浏览部分 -->
+    <section id="browse" class="py-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">热门分类</h2>
+                <p class="text-slate-600 dark:text-slate-300 mt-4">探索数千个精选提示词</p>
+            </div>
+
+            <!-- 分类网格 -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                <button data-category-id="ai-tools" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">🤖</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">AI 工具</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">2,456 个</div>
+                </button>
+
+                <button data-category-id="copywriting" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">✍️</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">文案创意</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">1,834 个</div>
+                </button>
+
+                <button data-category-id="coding" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">💻</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">代码编程</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">3,021 个</div>
+                </button>
+
+                <button data-category-id="education" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">📚</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">学习教育</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">2,145 个</div>
+                </button>
+
+                <button data-category-id="data" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">📊</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">数据分析</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">1,567 个</div>
+                </button>
+
+                <button data-category-id="content" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">🎨</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">内容创作</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">1,789 个</div>
+                </button>
+
+                <button data-category-id="business" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">💼</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">商业策略</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">1,432 个</div>
+                </button>
+
+                <button data-category-id="productivity" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">⚡</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">生产力工具</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">2,678 个</div>
+                </button>
+
+                <button data-category-id="professional" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">🏥</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">专业领域</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">890 个</div>
+                </button>
+
+                <button data-category-id="featured" class="glass dark:glass-dark rounded-lg p-4 sm:p-6 text-center card-hover transition-smooth group cursor-pointer">
+                    <div class="text-2xl sm:text-3xl mb-2">🌟</div>
+                    <div class="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm sm:text-base">精选推荐</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">412 个</div>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 提示词列表 -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/5 dark:bg-slate-800/50 transition-colors">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-12">
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">最新提示词</h2>
+                    <p class="text-slate-600 dark:text-slate-300 mt-2">社区贡献的优质内容</p>
+                </div>
+                <button data-action="browse" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-smooth cursor-pointer">
+                    查看全部
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- 提示词卡片列表 -->
+            <div class="space-y-4">
+                <!-- 提示词卡片 1 -->
+                <div data-prompt-id="1" class="glass dark:glass-dark rounded-lg p-6 card-hover transition-smooth cursor-pointer group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                专业内容营销文案生成器
+                            </h3>
+                            <div class="flex gap-2 mt-2">
+                                <span class="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">文案创意</span>
+                                <span class="inline-block px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded">中级</span>
+                            </div>
+                        </div>
+                        <div class="text-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-copy text-blue-500 dark:text-blue-400 cursor-pointer"></i>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300 line-clamp-2 mb-4">
+                        用这个提示词指示 AI 生成高转化率的营销文案。适用于产品介绍、广告文案、电商描述等场景...
+                    </p>
+                    <div class="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-heart text-red-400"></i> 234
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-star text-yellow-400"></i> 4.8
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-comment text-slate-400 dark:text-slate-500"></i> 12
+                            </span>
+                        </div>
+                        <span class="text-xs">by @用户名</span>
+                    </div>
+                </div>
+
+                <!-- 提示词卡片 2 -->
+                <div data-prompt-id="2" class="glass dark:glass-dark rounded-lg p-6 card-hover transition-smooth cursor-pointer group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                代码审查助手 - 深度分析
+                            </h3>
+                            <div class="flex gap-2 mt-2">
+                                <span class="inline-block px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">代码编程</span>
+                                <span class="inline-block px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded">高级</span>
+                            </div>
+                        </div>
+                        <div class="text-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-copy text-blue-500 dark:text-blue-400 cursor-pointer"></i>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300 line-clamp-2 mb-4">
+                        让 AI 扮演资深代码审查专家，对你的代码进行深度分析、提出改进建议、找出潜在 bug...
+                    </p>
+                    <div class="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-heart text-red-400"></i> 567
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-star text-yellow-400"></i> 4.9
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-comment text-slate-400 dark:text-slate-500"></i> 45
+                            </span>
+                        </div>
+                        <span class="text-xs">by @开发者</span>
+                    </div>
+                </div>
+
+                <!-- 提示词卡片 3 -->
+                <div data-prompt-id="3" class="glass dark:glass-dark rounded-lg p-6 card-hover transition-smooth cursor-pointer group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                学习笔记自动生成
+                            </h3>
+                            <div class="flex gap-2 mt-2">
+                                <span class="inline-block px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded">学习教育</span>
+                                <span class="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">初级</span>
+                            </div>
+                        </div>
+                        <div class="text-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-copy text-blue-500 dark:text-blue-400 cursor-pointer"></i>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300 line-clamp-2 mb-4">
+                        输入课程内容或文章，AI 自动生成结构清晰的学习笔记、思维导图和重点总结...
+                    </p>
+                    <div class="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-heart text-red-400"></i> 892
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-star text-yellow-400"></i> 4.7
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-comment text-slate-400 dark:text-slate-500"></i> 78
+                            </span>
+                        </div>
+                        <span class="text-xs">by @学生</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA 部分 -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass dark:glass-dark rounded-2xl p-8 sm:p-12 text-center">
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+                    准备好了吗？
+                </h2>
+                <p class="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-8">
+                    加入 50,000+ 用户，发现和分享最好的 AI 提示词。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button data-action="start" class="px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold btn-shadow hover:shadow-lg transition-smooth flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-rocket"></i>
+                        立即开始
+                    </button>
+                    <button class="px-8 py-3 sm:py-4 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-smooth flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-question-circle"></i>
+                        了解更多
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="border-t border-slate-200 dark:border-slate-700 py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-4">产品</h4>
+                    <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                        <li><button onclick="AppRouter.navigate('browse')" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">浏览提示词</button></li>
+                        <li><button data-action="upload" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">上传分享</button></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">我的收藏</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">API 文档</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-4">社区</h4>
+                    <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">论坛讨论</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">知识库</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">贡献指南</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">反馈建议</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-4">公司</h4>
+                    <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">关于我们</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">博客</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">联系我们</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">职位招聘</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-slate-900 dark:text-white mb-4">法律</h4>
+                    <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">隐私政策</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">服务条款</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cookie 政策</a></li>
+                        <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">许可证</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-slate-200 dark:border-slate-700 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-600 dark:text-slate-400">
+                <div>© 2024 Agent Prompts. 保留所有权利。</div>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <i class="fab fa-discord"></i>
+                    </a>
+                    <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <i class="fab fa-weibo"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 路由容器 (动态内容将在这里渲染) -->
+    <div id="app-container"></div>
+
+    <!-- 引入应用脚本 -->
+    <script src="app.js"></script>
+
+    <script>
+        // 平滑滚动 (针对锚点链接)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                // 检查是否不是路由链接
+                if (!this.getAttribute('href').match(/^#(feature|category|prompt|browse|upload)/)) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // 搜索框聚焦效果
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput) {
+            searchInput.addEventListener('focus', function() {
+                this.parentElement.classList.add('ring-2', 'ring-blue-500');
+            });
+            searchInput.addEventListener('blur', function() {
+                this.parentElement.classList.remove('ring-2', 'ring-blue-500');
+            });
+        }
+
+        // 监听路由变化，如果路由为 'home'，隐藏路由容器，显示首页内容
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.slice(1) || 'home';
+            const appContainer = document.getElementById('app-container');
+            if (hash === 'home') {
+                appContainer.innerHTML = '';
+            }
+        });
+
+        // 初始化时检查路由
+        const initialHash = window.location.hash.slice(1) || 'home';
+        if (initialHash === 'home') {
+            document.getElementById('app-container').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

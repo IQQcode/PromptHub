@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传提示词 - Agent Prompts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .transition-smooth {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            ring: 2px;
+        }
+        
+        .input-focus:focus {
+            @apply ring-2 ring-blue-500 ring-offset-0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2 group cursor-pointer">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <i class="fas fa-sparkles text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Agent Prompts
+                    </span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="px-5 py-2 text-slate-600 font-medium hover:text-blue-600 transition-smooth">
+                        返回
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="pt-24 pb-20">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- 标题 -->
+            <div class="mb-12">
+                <h1 class="text-4xl font-bold text-slate-900 mb-3">上传提示词</h1>
+                <p class="text-lg text-slate-600">分享你的 AI 提示词创意，帮助全球用户提升工作效率</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 主表单 -->
+                <div class="lg:col-span-2">
+                    <form class="space-y-8">
+                        <!-- 基本信息 -->
+                        <div class="glass rounded-xl p-8">
+                            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                                基本信息
+                            </h2>
+
+                            <!-- 标题 -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                    提示词标题 <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    placeholder="请输入一个清晰、吸引人的标题"
+                                    class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-smooth"
+                                    required
+                                >
+                                <p class="text-xs text-slate-500 mt-2">建议 20-50 个字符</p>
+                            </div>
+
+                            <!-- 描述 -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                    简短描述 <span class="text-red-500">*</span>
+                                </label>
+                                <textarea 
+                                    placeholder="用一句话描述这个提示词的用途和优势"
+                                    class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-smooth resize-none"
+                                    rows="2"
+                                    required
+                                ></textarea>
+                                <p class="text-xs text-slate-500 mt-2">建议 50-150 个字符</p>
+                            </div>
+
+                            <!-- 完整内容 -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                    完整提示词内容 <span class="text-red-500">*</span>
+                                </label>
+                                <textarea 
+                                    placeholder="在这里粘贴或输入你的 AI 提示词内容。支持 Markdown 格式。"
+                                    class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-smooth font-mono text-sm"
+                                    rows="10"
+                                    required
+                                ></textarea>
+                                <p class="text-xs text-slate-500 mt-2">支持 Markdown 格式化。建议 200-2000 个字符</p>
+                            </div>
+                        </div>
+
+                        <!-- 分类和标签 -->
+                        <div class="glass rounded-xl p-8">
+                            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <i class="fas fa-tags text-purple-600"></i>
+                                分类和标签
+                            </h2>
+
+                            <!-- 分类 -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                    主分类 <span class="text-red-500">*</span>
+                                </label>
+                                <select class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-smooth" required>
+                                    <option value="">-- 选择分类 --</option>
+                                    <option value="ai-tools">AI 工具</option>
+                                    <option value="copywriting">文案创意</option>
+                                    <option value="coding">代码编程</option>
+                                    <option value="education">学习教育</option>
+                                    <option value="data">数据分析</option>
+                                    <option value="content">内容创作</option>
+                                    <option value="business">商业策略</option>
+                                    <option value="productivity">生产力工具</option>
+                                    <option value="professional">专业领域</option>
+                                    <option value="other">其他</option>
+                                </select>
+                            </div>
+
+                            <!-- 标签 -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                    标签（多选）
+                                </label>
+                                <div class="space-y-2 max-h-48 overflow-y-auto">
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300">
+                                        <span class="text-sm">ChatGPT</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300">
+                                        <span class="text-sm">Claude</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300">
+                                        <span class="text-sm">高效</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300">
+                                        <span class="text-sm">实用</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300">
+                                        <span class="text-sm">创意</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 rounded border-slate-300">
+                                        <span class="text-sm">工程</span>
+                                    </label>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2">最多选择 5 个标签</p>
+                            </div>
+
+                            <!-- 难度和语言 -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                        难度级别 <span class="text-red-500">*</span>
+                                    </label>
+                                    <select class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-smooth" required>
+                                        <option value="">-- 选择 --</option>
+                                        <option value="beginner">初级</option>
+                                        <option value="intermediate">中级</option>
+                                        <option value="advanced">高级</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                        语言 <span class="text-red-500">*</span>
+                                    </label>
+                                    <select class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-smooth" required>
+                                        <option value="">-- 选择 --</option>
+                                        <option value="zh">中文</option>
+                                        <option value="en">英文</option>
+                                        <option value="multilingual">多语言</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 许可证和发布 -->
+                        <div class="glass rounded-xl p-8">
+                            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <i class="fas fa-gavel text-orange-600"></i>
+                                许可证和发布
+                            </h2>
+
+                            <!-- 许可证 -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                    使用许可证 <span class="text-red-500">*</span>
+                                </label>
+                                <div class="space-y-3">
+                                    <label class="flex items-start gap-3 p-3 border border-slate-300 rounded-lg cursor-pointer hover:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                        <input type="radio" name="license" value="cc0" class="w-4 h-4 mt-1" checked>
+                                        <div>
+                                            <div class="font-medium text-slate-900">CC0 - 公有领域</div>
+                                            <div class="text-xs text-slate-600">任何人都可以自由使用</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-3 p-3 border border-slate-300 rounded-lg cursor-pointer hover:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                        <input type="radio" name="license" value="cc-by" class="w-4 h-4 mt-1">
+                                        <div>
+                                            <div class="font-medium text-slate-900">CC-BY - 署名</div>
+                                            <div class="text-xs text-slate-600">需要标注作者和原始链接</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-3 p-3 border border-slate-300 rounded-lg cursor-pointer hover:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                        <input type="radio" name="license" value="cc-by-sa" class="w-4 h-4 mt-1">
+                                        <div>
+                                            <div class="font-medium text-slate-900">CC-BY-SA - 署名-相同方式共享</div>
+                                            <div class="text-xs text-slate-600">需要署名并以相同许可证共享</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 同意条款 -->
+                            <div class="space-y-3 mb-6">
+                                <label class="flex items-start gap-3 p-3 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                                    <input type="checkbox" class="w-4 h-4 mt-1" required>
+                                    <span class="text-sm text-slate-700">
+                                        我确认这是我的原创内容或有权发布此内容
+                                    </span>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                                    <input type="checkbox" class="w-4 h-4 mt-1" required>
+                                    <span class="text-sm text-slate-700">
+                                        我同意 <a href="#" class="text-blue-600 hover:underline">服务条款</a> 和 <a href="#" class="text-blue-600 hover:underline">隐私政策</a>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <!-- 提交按钮 -->
+                            <div class="flex gap-3">
+                                <button type="button" class="px-6 py-3 border border-slate-300 text-slate-900 rounded-lg font-semibold hover:bg-slate-50 transition-smooth">
+                                    保存草稿
+                                </button>
+                                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-smooth">
+                                    <i class="fas fa-rocket mr-2"></i>
+                                    提交发布
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 右侧预览 -->
+                <div class="lg:col-span-1">
+                    <div class="sticky top-24 space-y-6">
+                        <!-- 模板选择 -->
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                                <i class="fas fa-file-alt text-blue-600"></i>
+                                快速模板
+                            </h3>
+                            <div class="space-y-2">
+                                <button class="w-full px-4 py-2 text-left text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-smooth">
+                                    <i class="fas fa-plus mr-2 text-blue-600"></i>
+                                    文案优化模板
+                                </button>
+                                <button class="w-full px-4 py-2 text-left text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-smooth">
+                                    <i class="fas fa-plus mr-2 text-blue-600"></i>
+                                    代码助手模板
+                                </button>
+                                <button class="w-full px-4 py-2 text-left text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-smooth">
+                                    <i class="fas fa-plus mr-2 text-blue-600"></i>
+                                    学习助手模板
+                                </button>
+                                <button class="w-full px-4 py-2 text-left text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-smooth">
+                                    <i class="fas fa-plus mr-2 text-blue-600"></i>
+                                    通用对话模板
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 提示 -->
+                        <div class="glass rounded-xl p-6 border-l-4 border-l-green-500">
+                            <h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                                <i class="fas fa-lightbulb text-green-600"></i>
+                                优化建议
+                            </h3>
+                            <ul class="space-y-2 text-sm text-slate-700">
+                                <li class="flex items-start gap-2">
+                                    <i class="fas fa-check text-green-600 mt-1"></i>
+                                    <span>清晰的标题能获得更多关注</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fas fa-check text-green-600 mt-1"></i>
+                                    <span>具体的使用场景增加实用性</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fas fa-check text-green-600 mt-1"></i>
+                                    <span>示例和输出样本很重要</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fas fa-check text-green-600 mt-1"></i>
+                                    <span>使用关键词让搜索更容易</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- 统计 -->
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                                <i class="fas fa-chart-bar text-purple-600"></i>
+                                内容统计
+                            </h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">字数</span>
+                                    <span class="font-medium text-slate-900">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">段落数</span>
+                                    <span class="font-medium text-slate-900">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">完成度</span>
+                                    <span class="font-medium text-slate-900">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

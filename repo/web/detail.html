@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章润色助手 - PromptGo</title>
+    <meta name="description" content="优化文本的语法、清晰度和简洁度，提高可读性。">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#60A5FA',
+                        cta: '#F97316',
+                        background: '#F8FAFC',
+                        foreground: '#1E293B',
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        * {
+            transition-property: color, background-color, border-color, opacity;
+            transition-duration: 150ms;
+            transition-timing-function: ease;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition-duration: 0ms !important;
+                animation-duration: 0ms !important;
+            }
+        }
+        
+        /* Variable highlight in content */
+        .variable-highlight {
+            background-color: #FEF3C7;
+            color: #92400E;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        .dark .variable-highlight {
+            background-color: #78350F;
+            color: #FDE68A;
+        }
+        
+        /* Prompt content styling */
+        .prompt-content {
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* Toast notification */
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Heart animation */
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+            50% { transform: scale(1); }
+            75% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .heart-animate {
+            animation: heartbeat 0.4s ease;
+        }
+    </style>
+</head>
+<body class="bg-background dark:bg-gray-900 text-foreground dark:text-gray-100 font-sans antialiased min-h-screen">
+    
+    <!-- Toast Container (for copy success) -->
+    <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
+        <div class="toast bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>已复制到剪贴板</span>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="index.html" class="flex items-center gap-2 cursor-pointer">
+                    <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="text-xl font-bold text-foreground dark:text-white">PromptGo</span>
+                </a>
+                
+                <!-- Search Bar (hidden on mobile) -->
+                <div class="hidden md:flex flex-1 max-w-xl mx-8">
+                    <div class="relative w-full">
+                        <input 
+                            type="search" 
+                            placeholder="搜索 Prompt..." 
+                            class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            aria-label="搜索 Prompt"
+                        >
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Right Actions -->
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" aria-label="切换主题">
+                        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Login Button -->
+                    <a href="login.html" class="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg font-medium cursor-pointer">
+                        登录
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-16">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Back Navigation -->
+            <a href="index.html" class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary mb-6 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                <span>返回列表</span>
+            </a>
+            
+            <!-- Title Section -->
+            <header class="mb-8">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-foreground dark:text-white">文章润色助手</h1>
+                    <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            1,234 次使用
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            567 收藏
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Tags -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="index.html?category=writing" class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 cursor-pointer">
+                        写作辅助
+                    </a>
+                    <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm rounded-full">写作</span>
+                    <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm rounded-full">润色</span>
+                    <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm rounded-full">文章</span>
+                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm rounded-full">GPT-4</span>
+                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm rounded-full">Claude</span>
+                </div>
+            </header>
+            
+            <!-- Description -->
+            <section class="mb-8">
+                <h2 class="text-lg font-semibold text-foreground dark:text-white mb-2">描述</h2>
+                <p class="text-gray-600 dark:text-gray-400">
+                    优化文本的语法、清晰度和简洁度，提高可读性。分解长句、减少重复，并提供改进建议。请只提供修正后的中文版本，避免包含解释。
+                </p>
+            </section>
+            
+            <!-- Prompt Content -->
+            <section class="mb-8">
+                <h2 class="text-lg font-semibold text-foreground dark:text-white mb-4">Prompt 内容</h2>
+                <div class="relative">
+                    <div id="promptContent" class="prompt-content bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-sm text-foreground dark:text-gray-100">作为写作改进助手，你的任务是改进所提供文本的拼写、语法、清晰度、简洁性和整体可读性，同时分解长句，减少重复，并提供改进建议。请只提供文本的更正版本，避免包括解释。请从编辑以下文本开始：
+
+<span class="variable-highlight">{{文章内容}}</span></div>
+                    
+                    <!-- Copy Button (floating) -->
+                    <button id="copyRawBtn" class="absolute top-4 right-4 p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer" aria-label="复制原始内容">
+                        <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Variable Fill Form -->
+            <section class="mb-8">
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+                    <h2 class="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        变量填充
+                    </h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">填充以下变量后，可一键复制完整的 Prompt</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Variable 1 -->
+                        <div>
+                            <label for="var_content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                文章内容 <span class="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                id="var_content" 
+                                rows="6" 
+                                placeholder="请输入需要润色的文章内容..."
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y"
+                            ></textarea>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">请输入需要润色的文章，建议不超过 3000 字</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview -->
+                    <div class="mt-6">
+                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">实时预览</h3>
+                        <div id="previewContent" class="prompt-content bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-sm text-foreground dark:text-gray-100 max-h-48 overflow-y-auto">作为写作改进助手，你的任务是改进所提供文本的拼写、语法、清晰度、简洁性和整体可读性，同时分解长句，减少重复，并提供改进建议。请只提供文本的更正版本，避免包括解释。请从编辑以下文本开始：
+
+<span class="text-gray-400 dark:text-gray-500">[请填充变量]</span></div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Action Buttons -->
+            <section class="flex flex-col sm:flex-row gap-4 mb-8">
+                <button id="copyFilledBtn" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    复制 Prompt
+                </button>
+                <button id="favoriteBtn" class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg font-medium cursor-pointer">
+                    <svg id="heartIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                    <span id="favoriteText">收藏</span>
+                    <span id="favoriteCount" class="text-gray-500 dark:text-gray-400">567</span>
+                </button>
+            </section>
+            
+            <!-- Author Info -->
+            <section class="border-t border-gray-200 dark:border-gray-700 pt-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg">
+                            P
+                        </div>
+                        <div>
+                            <p class="font-medium text-foreground dark:text-white">PromptMaster</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">发布于 2024-01-15 · 更新于 2024-01-16</p>
+                        </div>
+                    </div>
+                    <a href="#" class="text-sm text-primary hover:underline cursor-pointer">查看更多 Prompt</a>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="font-semibold">PromptGo</span>
+                </div>
+                <nav class="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-600 dark:text-gray-400">
+                    <a href="#" class="hover:text-primary cursor-pointer">关于</a>
+                    <a href="api-docs.html" class="hover:text-primary cursor-pointer">API 文档</a>
+                    <a href="#" class="hover:text-primary cursor-pointer">GitHub</a>
+                    <a href="#" class="hover:text-primary cursor-pointer">联系我们</a>
+                </nav>
+                <p class="text-sm text-gray-500 dark:text-gray-400">© 2024 PromptGo. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Mobile Bottom Action Bar -->
+    <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 z-40">
+        <div class="flex gap-3">
+            <button id="mobileCopyBtn" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                复制
+            </button>
+            <button id="mobileFavoriteBtn" class="px-4 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Extra padding for mobile bottom bar -->
+    <div class="sm:hidden h-20"></div>
+    
+    <!-- Scripts -->
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                html.classList.toggle('dark', savedTheme === 'dark');
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                html.classList.add('dark');
+            }
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                html.classList.toggle('dark', e.matches);
+            }
+        });
+        
+        initTheme();
+        
+        // Prompt Template
+        const promptTemplate = `作为写作改进助手，你的任务是改进所提供文本的拼写、语法、清晰度、简洁性和整体可读性，同时分解长句，减少重复，并提供改进建议。请只提供文本的更正版本，避免包括解释。请从编辑以下文本开始：
+
+{{文章内容}}`;
+        
+        // Variable input
+        const varContent = document.getElementById('var_content');
+        const previewContent = document.getElementById('previewContent');
+        
+        // Update preview on input
+        varContent.addEventListener('input', updatePreview);
+        
+        function updatePreview() {
+            const value = varContent.value.trim();
+            let preview = promptTemplate;
+            
+            if (value) {
+                preview = preview.replace('{{文章内容}}', value);
+            } else {
+                preview = preview.replace('{{文章内容}}', '<span class="text-gray-400 dark:text-gray-500">[请填充变量]</span>');
+            }
+            
+            previewContent.innerHTML = preview;
+        }
+        
+        // Get filled prompt
+        function getFilledPrompt() {
+            const value = varContent.value.trim();
+            if (!value) {
+                return promptTemplate; // Return template as-is if no value
+            }
+            return promptTemplate.replace('{{文章内容}}', value);
+        }
+        
+        // Toast notification
+        function showToast(message = '已复制到剪贴板') {
+            const toast = document.getElementById('toastContainer');
+            toast.querySelector('span').textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2000);
+        }
+        
+        // Copy functionality
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast();
+            } catch (err) {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast();
+            }
+        }
+        
+        // Copy raw button
+        document.getElementById('copyRawBtn').addEventListener('click', () => {
+            copyToClipboard(promptTemplate);
+        });
+        
+        // Copy filled button
+        document.getElementById('copyFilledBtn').addEventListener('click', () => {
+            copyToClipboard(getFilledPrompt());
+        });
+        
+        // Mobile copy button
+        document.getElementById('mobileCopyBtn').addEventListener('click', () => {
+            copyToClipboard(getFilledPrompt());
+        });
+        
+        // Favorite functionality
+        let isFavorited = false;
+        let favoriteCount = 567;
+        
+        function toggleFavorite() {
+            isFavorited = !isFavorited;
+            const heartIcon = document.getElementById('heartIcon');
+            const favoriteText = document.getElementById('favoriteText');
+            const favoriteCountEl = document.getElementById('favoriteCount');
+            
+            if (isFavorited) {
+                favoriteCount++;
+                heartIcon.setAttribute('fill', 'currentColor');
+                heartIcon.classList.add('text-red-500', 'heart-animate');
+                heartIcon.classList.remove('text-current');
+                favoriteText.textContent = '已收藏';
+            } else {
+                favoriteCount--;
+                heartIcon.setAttribute('fill', 'none');
+                heartIcon.classList.remove('text-red-500', 'heart-animate');
+                favoriteText.textContent = '收藏';
+            }
+            
+            favoriteCountEl.textContent = favoriteCount;
+        }
+        
+        document.getElementById('favoriteBtn').addEventListener('click', toggleFavorite);
+        document.getElementById('mobileFavoriteBtn').addEventListener('click', toggleFavorite);
+    </script>
+</body>
+</html>

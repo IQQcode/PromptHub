@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传 Prompt - PromptGo</title>
+    <meta name="description" content="上传你的 Prompt，与社区分享 AI 使用经验。">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#60A5FA',
+                        cta: '#F97316',
+                        background: '#F8FAFC',
+                        foreground: '#1E293B',
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        * {
+            transition-property: color, background-color, border-color, opacity;
+            transition-duration: 150ms;
+            transition-timing-function: ease;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition-duration: 0ms !important;
+                animation-duration: 0ms !important;
+            }
+        }
+        
+        /* Variable highlight */
+        .variable-highlight {
+            background-color: #FEF3C7;
+            color: #92400E;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        .dark .variable-highlight {
+            background-color: #78350F;
+            color: #FDE68A;
+        }
+        
+        /* Tag input styles */
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background-color: #E0F2FE;
+            color: #0369A1;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        .dark .tag-item {
+            background-color: #0C4A6E;
+            color: #7DD3FC;
+        }
+        
+        /* Form error styles */
+        .form-error {
+            border-color: #EF4444 !important;
+        }
+        .form-error:focus {
+            ring-color: #EF4444 !important;
+        }
+        
+        /* Toast */
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-background dark:bg-gray-900 text-foreground dark:text-gray-100 font-sans antialiased min-h-screen">
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
+        <div class="toast px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>操作成功</span>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="index.html" class="flex items-center gap-2 cursor-pointer">
+                    <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="text-xl font-bold text-foreground dark:text-white">PromptGo</span>
+                </a>
+                
+                <!-- Right Actions -->
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" aria-label="切换主题">
+                        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- User Avatar (logged in state) -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm">
+                            U
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Page Title -->
+            <div class="mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-foreground dark:text-white mb-2">上传新 Prompt</h1>
+                <p class="text-gray-600 dark:text-gray-400">分享你的 Prompt，帮助更多人提升 AI 使用效率</p>
+            </div>
+            
+            <!-- Form + Preview Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                
+                <!-- Form Section -->
+                <div class="lg:col-span-3">
+                    <form id="uploadForm" class="space-y-6">
+                        
+                        <!-- Title -->
+                        <div>
+                            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                标题 <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="title" 
+                                name="title"
+                                maxlength="50"
+                                placeholder="给你的 Prompt 起个名字"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                required
+                            >
+                            <div class="flex justify-between mt-1">
+                                <span id="titleError" class="text-xs text-red-500 hidden">标题不能为空</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-auto"><span id="titleCount">0</span>/50</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                描述 <span class="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                id="description" 
+                                name="description"
+                                rows="3"
+                                maxlength="200"
+                                placeholder="简要描述这个 Prompt 的用途和特点"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                                required
+                            ></textarea>
+                            <div class="flex justify-between mt-1">
+                                <span id="descError" class="text-xs text-red-500 hidden">描述不能为空</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-auto"><span id="descCount">0</span>/200</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Prompt Content -->
+                        <div>
+                            <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Prompt 内容 <span class="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                id="content" 
+                                name="content"
+                                rows="10"
+                                maxlength="5000"
+                                placeholder="输入完整的 Prompt 内容，支持 {{变量名}} 语法定义变量"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y font-mono text-sm"
+                                required
+                            ></textarea>
+                            <div class="flex justify-between mt-1">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">提示：使用 <code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{{变量名}}</code> 定义可替换变量</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400"><span id="contentCount">0</span>/5000</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Category -->
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                分类 <span class="text-red-500">*</span>
+                            </label>
+                            <select 
+                                id="category" 
+                                name="category"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer"
+                                required
+                            >
+                                <option value="">请选择分类</option>
+                                <option value="writing">写作辅助</option>
+                                <option value="article">文章/报告</option>
+                                <option value="programming">IT/编程</option>
+                                <option value="ai">AI</option>
+                                <option value="lifestyle">生活质量</option>
+                                <option value="education">教育/学生</option>
+                                <option value="academic">学术/教师</option>
+                                <option value="translation">语言/翻译</option>
+                                <option value="seo">SEO</option>
+                                <option value="tools">工具</option>
+                                <option value="games">游戏</option>
+                                <option value="music">音乐</option>
+                                <option value="health">医疗健康</option>
+                                <option value="finance">金融顾问</option>
+                                <option value="business">企业职位</option>
+                                <option value="psychology">心理/社交</option>
+                                <option value="philosophy">哲学/宗教</option>
+                                <option value="creative">发散思维</option>
+                                <option value="fun">趣味知识</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Tags -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                标签 <span class="text-red-500">*</span> <span class="text-gray-400 font-normal">(最多 5 个)</span>
+                            </label>
+                            <div class="space-y-2">
+                                <div id="tagsContainer" class="flex flex-wrap gap-2 min-h-[36px] p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+                                    <!-- Tags will be added here -->
+                                    <input 
+                                        type="text" 
+                                        id="tagInput"
+                                        placeholder="输入标签后按回车添加"
+                                        class="flex-1 min-w-[120px] bg-transparent border-none outline-none text-foreground dark:text-gray-100 placeholder-gray-400 text-sm"
+                                    >
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">推荐标签：</span>
+                                    <button type="button" class="suggest-tag text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">写作</button>
+                                    <button type="button" class="suggest-tag text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">润色</button>
+                                    <button type="button" class="suggest-tag text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">编程</button>
+                                    <button type="button" class="suggest-tag text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">翻译</button>
+                                    <button type="button" class="suggest-tag text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer">学习</button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="tags" name="tags" value="">
+                        </div>
+                        
+                        <!-- Model Compatibility -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                适配模型 <span class="text-gray-400 font-normal">(可选)</span>
+                            </label>
+                            <div class="flex flex-wrap gap-3">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="models" value="GPT-4" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">GPT-4</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="models" value="GPT-3.5" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">GPT-3.5</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="models" value="Claude" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Claude</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="models" value="文心一言" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">文心一言</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="models" value="通义千问" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">通义千问</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="models" value="Gemini" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Gemini</span>
+                                </label>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">不选择则默认为"通用"</p>
+                        </div>
+                        
+                        <!-- Language -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                语言 <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="language" value="zh" class="w-4 h-4 border-gray-300 text-primary focus:ring-primary cursor-pointer" checked>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">中文</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="language" value="en" class="w-4 h-4 border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">英文</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="language" value="both" class="w-4 h-4 border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">双语</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                            <button type="button" onclick="window.history.back()" class="px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg font-medium cursor-pointer">
+                                取消
+                            </button>
+                            <button type="submit" id="submitBtn" class="flex-1 sm:flex-none px-8 py-3 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium cursor-pointer flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                发布 Prompt
+                            </button>
+                        </div>
+                        
+                    </form>
+                </div>
+                
+                <!-- Preview Section -->
+                <div class="lg:col-span-2">
+                    <div class="sticky top-24">
+                        <h2 class="text-lg font-semibold text-foreground dark:text-white mb-4">预览效果</h2>
+                        
+                        <!-- Card Preview -->
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
+                            <div class="flex items-start justify-between mb-3">
+                                <h3 id="previewTitle" class="font-semibold text-foreground dark:text-white line-clamp-2">未命名 Prompt</h3>
+                                <span id="previewModel" class="flex-shrink-0 ml-2 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full">通用</span>
+                            </div>
+                            <p id="previewDesc" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 mb-4">暂无描述</p>
+                            <div id="previewTags" class="flex flex-wrap gap-2 mb-4">
+                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-xs rounded-md">暂无标签</span>
+                            </div>
+                            <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                        </svg>
+                                        0
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                        </svg>
+                                        0
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Variables Detected -->
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                            <h3 class="text-sm font-semibold text-foreground dark:text-white mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                </svg>
+                                检测到的变量
+                            </h3>
+                            <div id="variablesList" class="text-sm text-gray-600 dark:text-gray-400">
+                                <p class="text-gray-400 dark:text-gray-500">在 Prompt 内容中使用 <code class="px-1 py-0.5 bg-white dark:bg-gray-800 rounded">{{变量名}}</code> 语法定义变量</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="font-semibold">PromptGo</span>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">© 2024 PromptGo. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                html.classList.toggle('dark', savedTheme === 'dark');
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                html.classList.add('dark');
+            }
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        initTheme();
+        
+        // Form Elements
+        const form = document.getElementById('uploadForm');
+        const titleInput = document.getElementById('title');
+        const descInput = document.getElementById('description');
+        const contentInput = document.getElementById('content');
+        const categorySelect = document.getElementById('category');
+        const tagInput = document.getElementById('tagInput');
+        const tagsContainer = document.getElementById('tagsContainer');
+        const tagsHidden = document.getElementById('tags');
+        
+        // Preview Elements
+        const previewTitle = document.getElementById('previewTitle');
+        const previewDesc = document.getElementById('previewDesc');
+        const previewTags = document.getElementById('previewTags');
+        const previewModel = document.getElementById('previewModel');
+        const variablesList = document.getElementById('variablesList');
+        
+        // Tags array
+        let tags = [];
+        const MAX_TAGS = 5;
+        
+        // Character counters
+        titleInput.addEventListener('input', () => {
+            document.getElementById('titleCount').textContent = titleInput.value.length;
+            updatePreview();
+        });
+        
+        descInput.addEventListener('input', () => {
+            document.getElementById('descCount').textContent = descInput.value.length;
+            updatePreview();
+        });
+        
+        contentInput.addEventListener('input', () => {
+            document.getElementById('contentCount').textContent = contentInput.value.length;
+            updateVariables();
+        });
+        
+        // Tag management
+        function addTag(tagName) {
+            tagName = tagName.trim();
+            if (!tagName || tags.length >= MAX_TAGS || tags.includes(tagName)) return;
+            
+            tags.push(tagName);
+            updateTagsDisplay();
+            updatePreview();
+        }
+        
+        function removeTag(tagName) {
+            tags = tags.filter(t => t !== tagName);
+            updateTagsDisplay();
+            updatePreview();
+        }
+        
+        function updateTagsDisplay() {
+            // Clear existing tags (keep input)
+            const existingTags = tagsContainer.querySelectorAll('.tag-item');
+            existingTags.forEach(tag => tag.remove());
+            
+            // Add new tags before input
+            tags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'tag-item';
+                tagEl.innerHTML = `
+                    ${tag}
+                    <button type="button" class="hover:text-red-500 cursor-pointer" onclick="removeTag('${tag}')">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+                tagsContainer.insertBefore(tagEl, tagInput);
+            });
+            
+            // Update hidden input
+            tagsHidden.value = tags.join(',');
+            
+            // Disable input if max reached
+            tagInput.disabled = tags.length >= MAX_TAGS;
+            tagInput.placeholder = tags.length >= MAX_TAGS ? '已达最大数量' : '输入标签后按回车添加';
+        }
+        
+        tagInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag(tagInput.value);
+                tagInput.value = '';
+            } else if (e.key === 'Backspace' && !tagInput.value && tags.length > 0) {
+                removeTag(tags[tags.length - 1]);
+            }
+        });
+        
+        // Suggested tags
+        document.querySelectorAll('.suggest-tag').forEach(btn => {
+            btn.addEventListener('click', () => {
+                addTag(btn.textContent);
+            });
+        });
+        
+        // Update preview
+        function updatePreview() {
+            previewTitle.textContent = titleInput.value || '未命名 Prompt';
+            previewDesc.textContent = descInput.value || '暂无描述';
+            
+            // Update tags preview
+            if (tags.length > 0) {
+                previewTags.innerHTML = tags.map(tag => 
+                    `<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md">${tag}</span>`
+                ).join('');
+            } else {
+                previewTags.innerHTML = '<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-xs rounded-md">暂无标签</span>';
+            }
+            
+            // Update model preview
+            const selectedModels = Array.from(document.querySelectorAll('input[name="models"]:checked')).map(cb => cb.value);
+            if (selectedModels.length > 0) {
+                previewModel.textContent = selectedModels[0];
+                previewModel.className = 'flex-shrink-0 ml-2 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full';
+            } else {
+                previewModel.textContent = '通用';
+                previewModel.className = 'flex-shrink-0 ml-2 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full';
+            }
+        }
+        
+        // Update variables detection
+        function updateVariables() {
+            const content = contentInput.value;
+            const regex = /\{\{([^}]+)\}\}/g;
+            const matches = [];
+            let match;
+            
+            while ((match = regex.exec(content)) !== null) {
+                const varName = match[1].split(':')[0].trim();
+                if (!matches.includes(varName)) {
+                    matches.push(varName);
+                }
+            }
+            
+            if (matches.length > 0) {
+                variablesList.innerHTML = matches.map(v => 
+                    `<span class="inline-block variable-highlight mr-2 mb-1">{{${v}}}</span>`
+                ).join('');
+            } else {
+                variablesList.innerHTML = '<p class="text-gray-400 dark:text-gray-500">在 Prompt 内容中使用 <code class="px-1 py-0.5 bg-white dark:bg-gray-800 rounded">{{变量名}}</code> 语法定义变量</p>';
+            }
+        }
+        
+        // Model checkbox change
+        document.querySelectorAll('input[name="models"]').forEach(cb => {
+            cb.addEventListener('change', updatePreview);
+        });
+        
+        // Form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Basic validation
+            let isValid = true;
+            
+            if (!titleInput.value.trim()) {
+                document.getElementById('titleError').classList.remove('hidden');
+                titleInput.classList.add('form-error');
+                isValid = false;
+            } else {
+                document.getElementById('titleError').classList.add('hidden');
+                titleInput.classList.remove('form-error');
+            }
+            
+            if (!descInput.value.trim()) {
+                document.getElementById('descError').classList.remove('hidden');
+                descInput.classList.add('form-error');
+                isValid = false;
+            } else {
+                document.getElementById('descError').classList.add('hidden');
+                descInput.classList.remove('form-error');
+            }
+            
+            if (tags.length === 0) {
+                isValid = false;
+                alert('请至少添加一个标签');
+            }
+            
+            if (!isValid) return;
+            
+            // Simulate submission
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                发布中...
+            `;
+            
+            setTimeout(() => {
+                // Show success toast
+                const toast = document.getElementById('toastContainer');
+                toast.querySelector('div').className = 'toast bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2';
+                toast.querySelector('span').textContent = '发布成功！';
+                toast.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    // Redirect to detail page
+                    window.location.href = 'detail.html';
+                }, 1500);
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
